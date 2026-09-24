@@ -18,6 +18,11 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Shift status colours from DESIGN.md.
+        open: "bg-status-open-bg text-status-open",
+        pending: "bg-status-pending-bg text-status-pending",
+        approved: "bg-status-approved-bg text-status-approved",
+        closed: "bg-status-closed-bg text-status-closed",
       },
     },
     defaultVariants: {

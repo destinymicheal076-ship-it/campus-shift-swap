@@ -1,5 +1,6 @@
 import { Nav } from "@/components/nav";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Building2 } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { getSession } from "@/lib/session";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -12,15 +13,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {session.workplace ? (
           children
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>You&apos;re not in a workplace yet</CardTitle>
-              <CardDescription>
-                Ask your supervisor to add you. For the demo, log in with one of the
-                seeded accounts listed in the README.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          <EmptyState
+            icon={Building2}
+            title="You're not in a workplace yet"
+            description="Ask your supervisor to add you. For the demo, log in with one of the seeded accounts in the README."
+          />
         )}
       </main>
     </>

@@ -8,6 +8,8 @@ A portfolio web app for student workers at campus jobs. A student posts a shift 
 
 **Read [spec.md](spec.md) before any product change.** [plan.md](plan.md) has the cut scope (21 tasks) and [todo.md](todo.md) the build order. If a request conflicts with them, explain the conflict before changing code.
 
+**UI follows [DESIGN.md](DESIGN.md):** colours, typeface and the tone of every piece of text.
+
 ## Stack
 - Next.js 16 (App Router, TypeScript, React 19). Middleware is now `proxy` (`src/proxy.ts`).
 - Supabase: Postgres, Auth (email + password), Row Level Security. `@supabase/ssr` for cookies.
@@ -38,6 +40,7 @@ A portfolio web app for student workers at campus jobs. A student posts a shift 
 - Every table has RLS. Schema changes go in a new, timestamped migration file, then run `db:types`.
 - Rules that span rows (claiming, overlapping shifts, approval) live in `security definer` Postgres functions and are also checked in the UI.
 - Format times with `APP_TIME_ZONE`, since the server runs in UTC.
+- Use theme tokens (`bg-primary`, `text-muted-foreground`, `bg-status-open-bg`), never raw hex or Tailwind palette colours. Show shift status with `<StatusBadge>`. Times get `tabular-nums`.
 - Before using an unfamiliar Next.js API, read `node_modules/next/dist/docs/`.
 - Keep changes small and focused, in the order todo.md gives. No unrelated refactors.
 

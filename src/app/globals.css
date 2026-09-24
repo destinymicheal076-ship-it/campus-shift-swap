@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -39,6 +39,29 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-status-open: var(--status-open);
+  --color-status-open-bg: var(--status-open-bg);
+  --color-status-pending: var(--status-pending);
+  --color-status-pending-bg: var(--status-pending-bg);
+  --color-status-approved: var(--status-approved);
+  --color-status-approved-bg: var(--status-approved-bg);
+  --color-status-closed: var(--status-closed);
+  --color-status-closed-bg: var(--status-closed-bg);
+  /* Type scale (design tokens): text-title, text-heading, text-body, text-small */
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.75rem;
+  --text-title--font-weight: 600;
+  --text-heading: 1rem;
+  --text-heading--line-height: 1.5rem;
+  --text-heading--font-weight: 600;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.125rem;
+  /* Elevation: flat cards (border only); shadow only for things above the page. */
+  --shadow-overlay: 0 10px 30px -10px rgb(24 24 27 / 0.25);
+  /* Motion */
+  --default-transition-duration: 150ms;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -49,24 +72,36 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* Palette from DESIGN.md. Neutral base, one brand colour (indigo) for
+     actions, and colour otherwise reserved for shift status. */
+  --background: #fafafa; /* page */
+  --foreground: #18181b; /* ink */
+  --card: #ffffff; /* surface */
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #4f46e5; /* brand */
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a; /* muted text */
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626; /* danger */
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #4f46e5;
+
+  /* Shift status: always shown with a word, never colour alone. */
+  --status-open: #92400e;
+  --status-open-bg: #fef3c7;
+  --status-pending: #075985;
+  --status-pending-bg: #e0f2fe;
+  --status-approved: #166534;
+  --status-approved-bg: #dcfce7;
+  --status-closed: #52525b;
+  --status-closed-bg: #f4f4f5;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -75,7 +110,7 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: #4f46e5;
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);

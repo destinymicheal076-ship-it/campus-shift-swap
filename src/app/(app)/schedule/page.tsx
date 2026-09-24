@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { List, ListItem } from "@/components/ui/list";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -58,7 +59,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">{session.workplace?.name} schedule</h1>
+        <h1 className="text-title">{session.workplace?.name} schedule</h1>
         <div className="flex gap-1">
           <Button asChild size="sm" variant={mine ? "default" : "outline"}>
             <Link href={href({ mine: true })}>Mine</Link>
@@ -73,12 +74,12 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
         <Button asChild size="sm" variant="outline">
           <Link href={href({ week: addDays(weekStart, -7) })}>← Prev</Link>
         </Button>
-        <div className="flex flex-col items-center text-sm">
+        <div className="flex flex-col items-center text-body">
           <span className="font-medium">
             {label(weekStart, shortFormat)} – {label(addDays(weekStart, 6), shortFormat)}
           </span>
           {weekStart !== thisWeek && (
-            <Link href={href({ week: thisWeek })} className="text-muted-foreground underline">
+            <Link href={href({ week: thisWeek })} className="text-small text-primary underline-offset-4 hover:underline">
               This week
             </Link>
           )}
@@ -88,31 +89,33 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
         </Button>
       </div>
 
-      {error && <p className="text-sm text-destructive">Couldn&apos;t load shifts: {error.message}</p>}
+      {error && <p className="text-small text-destructive">Couldn&apos;t load shifts: {error.message}</p>}
 
       {days.map((day) => {
         const dayShifts = byDay.get(day) ?? [];
         return (
           <Card key={day} className={day === today ? "border-primary" : undefined}>
             <CardHeader>
-              <CardTitle className="text-base">
+              <CardTitle className="text-heading">
                 {label(day, dayFormat)}
-                {day === today && <span className="ml-2 text-sm font-normal text-muted-foreground">Today</span>}
+                {day === today && <span className="ml-2 text-small font-normal text-primary">Today</span>}
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              {dayShifts.length === 0 && <p className="text-sm text-muted-foreground">No shifts</p>}
-              {dayShifts.map((s) => (
-                <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                  <span>
-                    {timeFormat.format(new Date(s.starts_at))}–{timeFormat.format(new Date(s.ends_at))}
-                  </span>
-                  <Badge variant="secondary">{s.roles?.name}</Badge>
-                  <span className="text-muted-foreground">
-                    {s.assignee_id === session.userId ? "You" : (s.profiles?.full_name ?? "Unassigned")}
-                  </span>
-                </div>
-              ))}
+            <CardContent>
+              {dayShifts.length === 0 ? (
+                <p className="text-small text-muted-foreground">No shifts</p>
+              ) : (
+                <List>
+                  {dayShifts.map((s) => (
+                    <ListItem
+                      key={s.id}
+                      leading={`${timeFormat.format(new Date(s.starts_at))}–${timeFormat.format(new Date(s.ends_at))}`}
+                      title={s.assignee_id === session.userId ? "You" : (s.profiles?.full_name ?? "Unassigned")}
+                      trailing={<Badge variant="secondary">{s.roles?.name}</Badge>}
+                    />
+                  ))}
+                </List>
+              )}
             </CardContent>
           </Card>
         );
