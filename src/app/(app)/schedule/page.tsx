@@ -4,39 +4,56 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
+import {
+  APP_TIME_ZONE,
+  addDays,
+  isDateString,
+  mondayOf,
+  todayInZone,
+  zonedMidnightToUtc,
+} from "@/lib/time";
 
-// Pages render on the server, so format times in the campus time zone,
-// not the server's (Vercel runs in UTC).
-const timeZone = process.env.APP_TIME_ZONE;
-const dayFormat = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "short", day: "numeric", timeZone });
-const timeFormat = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone });
+// Shift times are instants, shown in the campus zone. Day labels are plain
+// "YYYY-MM-DD" dates, so they're formatted as UTC to avoid shifting a day.
+const timeFormat = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIME_ZONE });
+const dayFormat = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
+const shortFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const label = (date: string, format: Intl.DateTimeFormat) => format.format(new Date(`${date}T00:00:00Z`));
 
-// First version of the week 3 schedule view: the next 14 days of shifts.
 export default async function SchedulePage({ searchParams }: PageProps<"/schedule">) {
-  const { view } = await searchParams;
+  const { view, week } = await searchParams;
   const mine = view !== "everyone";
+  const today = todayInZone();
+  const thisWeek = mondayOf(today);
+  const weekStart = isDateString(week) ? mondayOf(week) : thisWeek;
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
   const session = await getSession();
   const supabase = await createClient();
-
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const until = new Date(now);
-  until.setDate(now.getDate() + 14);
-
   let query = supabase
     .from("shifts")
     .select("id, starts_at, ends_at, assignee_id, roles (name), profiles (full_name)")
-    .gte("starts_at", now.toISOString())
-    .lt("starts_at", until.toISOString())
+    .gte("starts_at", zonedMidnightToUtc(weekStart).toISOString())
+    .lt("starts_at", zonedMidnightToUtc(addDays(weekStart, 7)).toISOString())
     .order("starts_at");
   if (mine) query = query.eq("assignee_id", session.userId);
   const { data: shifts, error } = await query;
 
-  const days = new Map<string, NonNullable<typeof shifts>>();
+  const byDay = new Map<string, NonNullable<typeof shifts>>();
   for (const s of shifts ?? []) {
-    const key = dayFormat.format(new Date(s.starts_at));
-    days.set(key, [...(days.get(key) ?? []), s]);
+    const day = todayInZone(new Date(s.starts_at));
+    byDay.set(day, [...(byDay.get(day) ?? []), s]);
   }
+
+  // Links keep the other setting: the toggle keeps the week, the week links keep the toggle.
+  const href = (next: { week?: string; mine?: boolean }) => {
+    const params = new URLSearchParams();
+    const w = next.week ?? weekStart;
+    if (w !== thisWeek) params.set("week", w);
+    if (!(next.mine ?? mine)) params.set("view", "everyone");
+    const qs = params.toString();
+    return qs ? `/schedule?${qs}` : "/schedule";
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -44,39 +61,62 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
         <h1 className="text-xl font-semibold">{session.workplace?.name} schedule</h1>
         <div className="flex gap-1">
           <Button asChild size="sm" variant={mine ? "default" : "outline"}>
-            <Link href="/schedule">Mine</Link>
+            <Link href={href({ mine: true })}>Mine</Link>
           </Button>
           <Button asChild size="sm" variant={mine ? "outline" : "default"}>
-            <Link href="/schedule?view=everyone">Everyone</Link>
+            <Link href={href({ mine: false })}>Everyone</Link>
           </Button>
         </div>
       </div>
 
-      {error && <p className="text-sm text-destructive">Couldn&apos;t load shifts: {error.message}</p>}
-      {!error && days.size === 0 && (
-        <p className="text-sm text-muted-foreground">No shifts in the next 2 weeks.</p>
-      )}
+      <div className="flex items-center justify-between gap-2">
+        <Button asChild size="sm" variant="outline">
+          <Link href={href({ week: addDays(weekStart, -7) })}>← Prev</Link>
+        </Button>
+        <div className="flex flex-col items-center text-sm">
+          <span className="font-medium">
+            {label(weekStart, shortFormat)} – {label(addDays(weekStart, 6), shortFormat)}
+          </span>
+          {weekStart !== thisWeek && (
+            <Link href={href({ week: thisWeek })} className="text-muted-foreground underline">
+              This week
+            </Link>
+          )}
+        </div>
+        <Button asChild size="sm" variant="outline">
+          <Link href={href({ week: addDays(weekStart, 7) })}>Next →</Link>
+        </Button>
+      </div>
 
-      {[...days].map(([day, dayShifts]) => (
-        <Card key={day}>
-          <CardHeader>
-            <CardTitle className="text-base">{day}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {dayShifts.map((s) => (
-              <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span>
-                  {timeFormat.format(new Date(s.starts_at))}–{timeFormat.format(new Date(s.ends_at))}
-                </span>
-                <Badge variant="secondary">{s.roles?.name}</Badge>
-                <span className="text-muted-foreground">
-                  {s.assignee_id === session.userId ? "You" : (s.profiles?.full_name ?? "Unassigned")}
-                </span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ))}
+      {error && <p className="text-sm text-destructive">Couldn&apos;t load shifts: {error.message}</p>}
+
+      {days.map((day) => {
+        const dayShifts = byDay.get(day) ?? [];
+        return (
+          <Card key={day} className={day === today ? "border-primary" : undefined}>
+            <CardHeader>
+              <CardTitle className="text-base">
+                {label(day, dayFormat)}
+                {day === today && <span className="ml-2 text-sm font-normal text-muted-foreground">Today</span>}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              {dayShifts.length === 0 && <p className="text-sm text-muted-foreground">No shifts</p>}
+              {dayShifts.map((s) => (
+                <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span>
+                    {timeFormat.format(new Date(s.starts_at))}–{timeFormat.format(new Date(s.ends_at))}
+                  </span>
+                  <Badge variant="secondary">{s.roles?.name}</Badge>
+                  <span className="text-muted-foreground">
+                    {s.assignee_id === session.userId ? "You" : (s.profiles?.full_name ?? "Unassigned")}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

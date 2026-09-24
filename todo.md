@@ -15,7 +15,7 @@ The scope is cut to 21 tasks (from 30). See [plan.md](plan.md) for why.
 
 ## Week 3: Shifts + schedule
 - [ ] Supervisor form to create shifts (date, time, role, assigned student)
-- [ ] Weekly schedule view with a "Mine / Everyone" toggle
+- [x] Weekly schedule view with a "Mine / Everyone" toggle
 
 ## Weeks 4–5: Swap flow
 - [ ] "Request cover" on your own shift, with an optional note
