@@ -50,6 +50,15 @@ const SLOTS: [string, number, number][] = [
   [SHELVING, 10, 14],
 ];
 
+// For writes: fail only on an error (writes without .select() return no data).
+function must(result: { error: unknown }, what: string): void {
+  if (result.error) {
+    console.error(`Failed to ${what}:`, result.error);
+    process.exit(1);
+  }
+}
+
+// For reads: fail on an error or missing data.
 function check<T>(result: { data: T; error: unknown }, what: string): NonNullable<T> {
   if (result.error || result.data == null) {
     console.error(`Failed to ${what}:`, result.error);
@@ -90,7 +99,7 @@ async function main() {
   const ids = new Map<string, string>();
   for (const u of USERS) ids.set(u.email, await ensureUser(u));
   // Keep names in sync in case a profile already existed.
-  check(
+  must(
     await supabase
       .from("profiles")
       .upsert(USERS.map((u) => ({ id: ids.get(u.email)!, full_name: u.name }))),
@@ -119,7 +128,7 @@ async function main() {
   const roleId = new Map(roles.map((r) => [r.name, r.id]));
 
   // Memberships and role assignments.
-  check(
+  must(
     await supabase.from("memberships").upsert(
       USERS.map((u) => ({
         user_id: ids.get(u.email)!,
@@ -129,7 +138,7 @@ async function main() {
     ),
     "upsert memberships",
   );
-  check(
+  must(
     await supabase.from("user_roles").upsert(
       USERS.flatMap((u) =>
         u.roles.map((r) => ({ user_id: ids.get(u.email)!, role_id: roleId.get(r)! })),
@@ -139,7 +148,7 @@ async function main() {
   );
 
   // Shifts: replace with 2 weeks of weekdays starting this Monday.
-  check(
+  must(
     await supabase.from("shifts").delete().eq("workplace_id", workplace.id),
     "clear shifts",
   );
@@ -169,7 +178,7 @@ async function main() {
       });
     }
   }
-  check(await supabase.from("shifts").insert(shifts), "insert shifts");
+  must(await supabase.from("shifts").insert(shifts), "insert shifts");
 
   console.log(`Seeded "${WORKPLACE}": ${USERS.length} users, ${shifts.length} shifts.`);
   console.log(`Log in as any of these with password "${PASSWORD}":`);

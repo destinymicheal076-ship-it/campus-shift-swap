@@ -4,7 +4,7 @@ The scope is cut to 21 tasks (from 30). See [plan.md](plan.md) for why.
 
 ## Week 1: Setup + login
 - [x] Create a Next.js app with TypeScript and Tailwind
-- [ ] Create a Supabase project and connect it to the app
+- [x] Create a Supabase project and connect it to the app
 - [ ] Deploy to Vercel
 - [x] Email and password sign-up, log-in and log-out
 
