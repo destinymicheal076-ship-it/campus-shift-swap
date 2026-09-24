@@ -21,6 +21,7 @@ A portfolio web app for student workers at campus jobs. A student posts a shift 
 | `npm run db:types` | Regenerate `src/lib/database.types.ts` |
 | `npm run seed` | Reset demo data (Main Library, password `demo1234`) |
 | `npx shadcn@latest add <name>` | Add a UI component |
+| `npm run fetch-as -- <user> <path>` | Load a page as a demo user (app must be running) |
 
 ## Layout
 - `src/lib/supabase/{client,server,proxy}.ts`: the only places Supabase clients are created
@@ -28,6 +29,7 @@ A portfolio web app for student workers at campus jobs. A student posts a shift 
 - `src/app/(auth)/`: login, signup, auth server actions
 - `src/app/(app)/`: logged-in pages; the layout loads the session and nav
 - `supabase/migrations/`: schema and RLS; `scripts/seed.ts`: demo data
+- `.claude/skills/`: `/add-screen <name>` builds a screen from spec.md + DESIGN.md; `/project-review` reviews changes before a commit
 
 ## Conventions
 - Server Components by default; add `"use client"` only for interactivity (forms use `useActionState`).

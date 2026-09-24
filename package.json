@@ -11,7 +11,8 @@
     "db:link": "supabase link",
     "db:push": "supabase db push",
     "typecheck": "next typegen && tsc --noEmit",
-    "db:types": "supabase gen types typescript --linked > src/lib/database.types.ts"
+    "db:types": "supabase gen types typescript --linked > src/lib/database.types.ts",
+    "fetch-as": "tsx scripts/fetch-as.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
