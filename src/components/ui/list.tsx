@@ -43,7 +43,10 @@ function ListItem({
         <div className="text-body">{title}</div>
         {meta && <div className="text-small text-muted-foreground">{meta}</div>}
       </div>
-      {trailing && <div className="flex items-center gap-2">{trailing}</div>}
+      {trailing && (
+        // A form opened inside the row (like the cover note) takes the full width.
+        <div className="flex flex-wrap items-center gap-2 has-[form]:basis-full">{trailing}</div>
+      )}
     </li>
   )
 }

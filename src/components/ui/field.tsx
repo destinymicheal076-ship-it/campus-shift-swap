@@ -17,7 +17,12 @@ function Field({
   error?: string
   id: string
   className?: string
-  children: React.ReactElement<React.ComponentProps<"input">>
+  // An input or select; Field sets its id and aria props.
+  children: React.ReactElement<{
+    id?: string
+    "aria-describedby"?: string
+    "aria-invalid"?: boolean
+  }>
 }) {
   const hintId = hint ? `${id}-hint` : undefined
   const errorId = error ? `${id}-error` : undefined

@@ -3,10 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { List, ListItem } from "@/components/ui/list";
+import { StatusBadge } from "@/components/status-badge";
+import { CancelRequestButton, RequestCoverButton } from "@/components/swap-buttons";
+import { shiftLabel, timeRange } from "@/lib/format";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import {
-  APP_TIME_ZONE,
   addDays,
   isDateString,
   mondayOf,
@@ -16,7 +18,6 @@ import {
 
 // Shift times are instants, shown in the campus zone. Day labels are plain
 // "YYYY-MM-DD" dates, so they're formatted as UTC to avoid shifting a day.
-const timeFormat = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIME_ZONE });
 const dayFormat = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
 const shortFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 const label = (date: string, format: Intl.DateTimeFormat) => format.format(new Date(`${date}T00:00:00Z`));
@@ -24,7 +25,8 @@ const label = (date: string, format: Intl.DateTimeFormat) => format.format(new D
 export default async function SchedulePage({ searchParams }: PageProps<"/schedule">) {
   const { view, week } = await searchParams;
   const mine = view !== "everyone";
-  const today = todayInZone();
+  const now = new Date();
+  const today = todayInZone(now);
   const thisWeek = mondayOf(today);
   const weekStart = isDateString(week) ? mondayOf(week) : thisWeek;
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -33,7 +35,9 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
   const supabase = await createClient();
   let query = supabase
     .from("shifts")
-    .select("id, starts_at, ends_at, assignee_id, roles (name), profiles (full_name)")
+    .select(
+      "id, starts_at, ends_at, assignee_id, roles (name), profiles (full_name), swap_requests (id, status, requester_id, note, claimer:profiles!swap_requests_claimer_id_fkey (full_name))",
+    )
     .gte("starts_at", zonedMidnightToUtc(weekStart).toISOString())
     .lt("starts_at", zonedMidnightToUtc(addDays(weekStart, 7)).toISOString())
     .order("starts_at");
@@ -106,14 +110,35 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
                 <p className="text-small text-muted-foreground">No shifts</p>
               ) : (
                 <List>
-                  {dayShifts.map((s) => (
-                    <ListItem
-                      key={s.id}
-                      leading={`${timeFormat.format(new Date(s.starts_at))}–${timeFormat.format(new Date(s.ends_at))}`}
-                      title={s.assignee_id === session.userId ? "You" : (s.profiles?.full_name ?? "Unassigned")}
-                      trailing={<Badge variant="secondary">{s.roles?.name}</Badge>}
-                    />
-                  ))}
+                  {dayShifts.map((s) => {
+                    const mineShift = s.assignee_id === session.userId;
+                    const started = new Date(s.starts_at) <= now;
+                    // The one open or pending request, if any (the database allows only one).
+                    const active = s.swap_requests.find((r) => r.status === "open" || r.status === "pending");
+                    const status = active && active.status === "open" && started ? "expired" : active?.status;
+                    const meta =
+                      active?.status === "pending"
+                        ? `Claimed by ${active.claimer?.full_name ?? "a coworker"}`
+                        : active?.note || undefined;
+                    return (
+                      <ListItem
+                        key={s.id}
+                        leading={timeRange(s.starts_at, s.ends_at)}
+                        title={mineShift ? "You" : (s.profiles?.full_name ?? "Unassigned")}
+                        meta={meta}
+                        trailing={
+                          <>
+                            <Badge variant="secondary">{s.roles?.name}</Badge>
+                            {status && <StatusBadge status={status} />}
+                            {mineShift && !started && !active && <RequestCoverButton shiftId={s.id} />}
+                            {mineShift && !started && active && active.requester_id === session.userId && (
+                              <CancelRequestButton requestId={active.id} label={shiftLabel(s.starts_at, s.ends_at)} />
+                            )}
+                          </>
+                        }
+                      />
+                    );
+                  })}
                 </List>
               )}
             </CardContent>

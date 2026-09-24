@@ -14,20 +14,20 @@ The scope is cut to 21 tasks (from 30). See [plan.md](plan.md) for why.
 - [x] Seed script: 1 workplace, 2 roles, 1 supervisor, 6 students, 2 weeks of shifts
 
 ## Week 3: Shifts + schedule
-- [ ] Supervisor form to create shifts (date, time, role, assigned student)
+- [x] Supervisor form to create shifts (date, time, role, assigned student)
 - [x] Weekly schedule view with a "Mine / Everyone" toggle
 
 ## Weeks 4–5: Swap flow
-- [ ] "Request cover" on your own shift, with an optional note
-- [ ] "Open shifts" list, filtered to your role
-- [ ] Claim a shift (only one person can claim it)
-- [ ] Supervisor approval queue with approve and deny
-- [ ] Cancel a request before it's approved
-- [ ] Status badges (Open, Pending approval, Expired)
+- [x] "Request cover" on your own shift, with an optional note
+- [x] "Open shifts" list, filtered to your role
+- [x] Claim a shift (only one person can claim it)
+- [x] Supervisor approval queue with approve and deny
+- [x] Cancel a request before it's approved
+- [x] Status badges (Open, Pending approval, Expired)
 
 ## Week 6: Rules + tests
-- [ ] Block a claim that overlaps one of your existing shifts
-- [ ] Allow only one active request per shift
+- [x] Block a claim that overlaps one of your existing shifts
+- [x] Allow only one active request per shift
 - [ ] Test that RLS keeps each workplace's data separate
 
 ## Weeks 7–8: Polish + launch
