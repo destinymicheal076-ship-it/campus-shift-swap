@@ -86,14 +86,6 @@ async function ensureUser(u: DemoUser): Promise<string> {
   return existing.id;
 }
 
-function mondayThisWeek(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  const day = d.getDay(); // 0 = Sunday
-  d.setDate(d.getDate() - ((day + 6) % 7));
-  return d;
-}
-
 async function main() {
   // Users (the sign-up trigger creates their profiles).
   const ids = new Map<string, string>();
@@ -156,19 +148,19 @@ async function main() {
     USERS.filter((u) => u.roles.includes(role)).map((u) => ids.get(u.email)!);
   const turn = new Map<string, number>();
   const shifts = [];
-  const monday = mondayThisWeek();
+  // Dates and hours are campus time (APP_TIME_ZONE), not this machine's.
+  const { addDays, mondayOf, todayInZone, zonedTimeToUtc } = await import("../src/lib/time");
+  const monday = mondayOf(todayInZone());
   for (let i = 0; i < 14; i++) {
-    const day = new Date(monday);
-    day.setDate(monday.getDate() + i);
-    if (day.getDay() === 0 || day.getDay() === 6) continue;
+    const day = addDays(monday, i);
+    const weekday = new Date(`${day}T00:00:00Z`).getUTCDay();
+    if (weekday === 0 || weekday === 6) continue;
     for (const [role, start, end] of SLOTS) {
       const staff = staffFor(role);
       const n = turn.get(role) ?? 0;
       turn.set(role, n + 1);
-      const startsAt = new Date(day);
-      startsAt.setHours(start);
-      const endsAt = new Date(day);
-      endsAt.setHours(end);
+      const startsAt = zonedTimeToUtc(day, start);
+      const endsAt = zonedTimeToUtc(day, end);
       shifts.push({
         workplace_id: workplace.id,
         role_id: roleId.get(role)!,
@@ -180,7 +172,9 @@ async function main() {
   }
   must(await supabase.from("shifts").insert(shifts), "insert shifts");
 
-  console.log(`Seeded "${WORKPLACE}": ${USERS.length} users, ${shifts.length} shifts.`);
+  console.log(
+    `Seeded "${WORKPLACE}": ${USERS.length} users, ${shifts.length} shifts (${process.env.APP_TIME_ZONE ?? "machine time zone"}).`,
+  );
   console.log(`Log in as any of these with password "${PASSWORD}":`);
   for (const u of USERS) {
     console.log(`  ${u.email.padEnd(24)} ${u.supervisor ? "supervisor" : u.roles.join(", ")}`);

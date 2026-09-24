@@ -7,21 +7,27 @@ export const APP_TIME_ZONE = process.env.APP_TIME_ZONE;
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-const partsFormat = new Intl.DateTimeFormat("en-US", {
-  timeZone: APP_TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hourCycle: "h23",
-});
+// Built on first use, not at import, so scripts that load .env.local after
+// their imports (scripts/seed.ts) still get the campus zone.
+let partsFormat: Intl.DateTimeFormat | undefined;
+function getPartsFormat() {
+  partsFormat ??= new Intl.DateTimeFormat("en-US", {
+    timeZone: process.env.APP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  });
+  return partsFormat;
+}
 
 // The wall-clock time in the campus zone at `instant`, read as if it were UTC.
 function wallClockAsUtc(instant: Date): number {
   const p = Object.fromEntries(
-    partsFormat.formatToParts(instant).map((x) => [x.type, x.value]),
+    getPartsFormat().formatToParts(instant).map((x) => [x.type, x.value]),
   );
   return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
 }
@@ -47,11 +53,16 @@ export function mondayOf(date: string): string {
   return addDays(date, -((day + 6) % 7));
 }
 
-// The UTC instant of 00:00 on `date` in the campus zone.
-export function zonedMidnightToUtc(date: string): Date {
-  const guess = Date.parse(`${date}T00:00:00Z`);
+// The UTC instant of `hour`:`minute` on `date` in the campus zone.
+export function zonedTimeToUtc(date: string, hour: number, minute = 0): Date {
+  const guess = Date.parse(`${date}T00:00:00Z`) + (hour * 60 + minute) * 60_000;
   // Offset of the zone around that time; a second pass settles DST changes.
   let utc = guess - (wallClockAsUtc(new Date(guess)) - guess);
   utc = guess - (wallClockAsUtc(new Date(utc)) - utc);
   return new Date(utc);
+}
+
+// The UTC instant of 00:00 on `date` in the campus zone.
+export function zonedMidnightToUtc(date: string): Date {
+  return zonedTimeToUtc(date, 0);
 }
